@@ -1,7 +1,8 @@
 {
   "expo": {
-    "sdkVersion": "23.0.0"
-    "atom-terminal":
-    "--useThisOptionWhenLaunchingTerminal"
+    "name": "Pocket Care",
+    "slug": "pocket-care-app",
+    "sdkVersion": "23.0.0",
+    "privacy": "unlisted"
   }
 }

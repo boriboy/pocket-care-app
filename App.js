@@ -1,23 +1,34 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Alert, Button, Text, View } from 'react-native';
+import NavigationBar from './components/nav';
+import MedCreate from './components/interaction/medCreate';
 
 export default class App extends React.Component {
   render() {
     return (
-      <View style={styles.container}>
-        <Text>Open up App.js to start working on your app!</Text>
-        <Text>Changes you make will automatically reload.</Text>
-        <Text>Shake your phone to open the developer menu.</Text>
+      <View style={styles.global}>
+        <NavigationBar />
+
+        <MedCreate />
+
       </View>
+
+      // <View style={styles.container}>
+        // <Text>Lika rules </Text>
+      // </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  global: {
+    backgroundColor: '#ccdae7',
+    flex: 1
+  }
 });
