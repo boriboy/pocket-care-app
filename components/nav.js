@@ -2,11 +2,16 @@ import React, { Component } from 'react';
 import { AppRegistry, Text, View, StyleSheet} from 'react-native';
 
 export default class NavigationBar extends Component {
+  _containerStyle() {
+    let height = this.props.height
+    return {flex: 1, backgroundColor: '#698baa', maxHeight: height}
+  }
+
   render() {
     return (
-      <View style={styles.container}>
+      <View style={this._containerStyle()}>
         <View style={styles.marginedView}>
-          <Text style={styles.title}>MY MEDS</Text>
+          <Text style={styles.title}>{this.props.title}</Text>
         </View>
       </View>
     )
@@ -14,12 +19,6 @@ export default class NavigationBar extends Component {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#698baa',
-    maxHeight: '11%'
-  },
-
   marginedView: {
     flex: 1,
     flexDirection: 'row',
@@ -31,7 +30,9 @@ const styles = StyleSheet.create({
 
   title: {
     flex: 8,
-    textAlign: 'center'
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: 'bold'
     // justifyContent: 'center',
     // width: '50%'
     // fontFamily: 'Maiandra',

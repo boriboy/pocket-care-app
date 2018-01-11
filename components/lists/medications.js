@@ -1,23 +1,16 @@
 import React, { Component } from 'react';
-import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import Fetcher from '../../app/logic/fetcher';
 import IntakeIndicator from '../../components/intakeIndicator';
 
 export default class Medications extends Component {
   constructor(props) {
     super(props)
-    this.state = {
-      data: [],
-      loaded: false
-    }
 
-    // call server for medications
-    Fetcher.get('med').then(res => {
-      console.log(res.data)
-      this.setState(prevState => {
-        return {data: res.data, loaded: true}
-      })
-    })
+    this.state = {
+      data: props.data,
+      loaded: props.data
+    }
   }
 
   _renderItem(title, freq) {
@@ -38,14 +31,23 @@ export default class Medications extends Component {
     )
   }
 
+  shouldComponentUpdate(nextProps) {
+    console.log('inside componentWillReceiveProps')
+    console.log(this.props.data !== nextProps.data)
+
+    return this.props.data !== nextProps.data
+  }
+
   render() {
+    console.log('rendering medications')
+
     // loader while async request processing
-    if (!this.state.loaded) {
+    if (!this.props.loaded) {
       return (this._renderLoader())
     } else {
       return (
         <FlatList
-          data={this.state.data}
+          data={this.props.data}
           renderItem={({item}) => {
             if (item.title)
               return (this._renderItem(item.title, item.freq))
@@ -78,5 +80,6 @@ const styles = StyleSheet.create({
   medicationTitle: {
     fontSize: 20,
     textAlign: 'center',
+    color: '#000',
   }
 })
