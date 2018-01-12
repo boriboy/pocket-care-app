@@ -29,6 +29,21 @@ export default class Fetcher {
     return this.fetch( serverApiUri + url + FetcherHelper.prepareQueryString(data), getRequest() )
   }
 
+  /**
+   * Delete http
+   */
+  static del (url : string) {
+    // init post config
+    let delRequest = function() {
+      return Object.assign(
+        requestHeaders,
+        delConfig
+      )}
+
+    // submit request
+    return this.fetch( serverApiUri + url , delRequest() )
+  }
+
   static fetch (uri : string, config : object) {
     return fetch(uri, config).then(res => res.json())
   }
@@ -61,6 +76,10 @@ const postConfig = {
 const getConfig = {
   method: 'GET',
   cache: 'default'
+}
+
+const delConfig = {
+  method: 'DELETE'
 }
 
 const requestHeaders = {

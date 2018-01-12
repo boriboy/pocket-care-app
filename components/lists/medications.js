@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
+import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Fetcher from '../../app/logic/fetcher';
 import IntakeIndicator from '../../components/intakeIndicator';
 
@@ -13,13 +13,34 @@ export default class Medications extends Component {
     }
   }
 
-  _renderItem(title, freq) {
+  __syncState(data) {
+    console.log(`inside sync state - ${data}`)
+    this.setState(data)
+  }
+
+  _deleteItem(id) {
+    console.log(`Deleting ${id}`);
+    Fetcher.del(`med/${id}`)
+      .then(res => {
+        this.__syncState({data: res.data, loaded:true})
+    }).catch(err => console.log(err))
+  }
+
+  promptDelete(med) {
+    Alert.alert(`Delete ${med.title}`, `are you sure?`, [
+      {text: 'Nah', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+      {text: 'Yep', onPress: () => this._deleteItem(med._id)}
+    ])
+  }
+
+  _renderItem(med) {
     return (
-      <View style={styles.itemContainer}>
-        <Text style={styles.medicationTitle}>{title}</Text>
-        <IntakeIndicator freq={freq} taken={freq} />
+      <TouchableOpacity style={styles.itemContainer}
+        onLongPress={() => this.promptDelete(med)}>
+        <Text style={styles.medicationTitle}>{med.title}</Text>
+        <IntakeIndicator freq={med.freq} taken={med.freq} />
         {/*+<Text style={styles.medicationTitle}>0</Text>*/}
-      </View>
+      </TouchableOpacity>
     )
   }
 
@@ -31,26 +52,30 @@ export default class Medications extends Component {
     )
   }
 
-  shouldComponentUpdate(nextProps) {
-    console.log('inside componentWillReceiveProps')
-    console.log(this.props.data !== nextProps.data)
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('inside medications shouldComponentUpdate')
 
-    return this.props.data !== nextProps.data
+    if (this.props.data !== nextProps.data) {
+      this.__syncState(nextProps)
+      return true
+    } else {
+      return this.state.data !== nextState.data
+    }
   }
 
   render() {
     console.log('rendering medications')
 
     // loader while async request processing
-    if (!this.props.loaded) {
+    if (!this.state.loaded) {
       return (this._renderLoader())
     } else {
       return (
         <FlatList
-          data={this.props.data}
+          data={this.state.data}
           renderItem={({item}) => {
             if (item.title)
-              return (this._renderItem(item.title, item.freq))
+              return (this._renderItem(item))
           }}
           keyExtractor={(item, index) => index}
         />
