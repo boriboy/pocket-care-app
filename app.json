@@ -1,8 +1,17 @@
 {
   "expo": {
     "name": "Pocket Care",
-    "slug": "pocket-care-app",
+    "slug": "pocket-care",
+    "icon": "./app/img/PocketCareIcon.png",
     "sdkVersion": "23.0.0",
-    "privacy": "unlisted"
+    "privacy": "unlisted",
+    "version": "0.0.1",
+    "sdkVersion": "23.0.0",
+    "ios": {
+      "bundleIdentifier": "com.libo.pocket-care"
+    },
+    "android": {
+      "package": "com.libo.pocket-care"
+    }
   }
 }
