@@ -8,10 +8,10 @@
     "version": "0.0.1",
     "sdkVersion": "23.0.0",
     "ios": {
-      "bundleIdentifier": "com.libo.pocket-care"
+      "bundleIdentifier": "com.libo.pocketcare"
     },
     "android": {
-      "package": "com.libo.pocket-care"
+      "package": "com.libo.pocketcare"
     }
   }
 }

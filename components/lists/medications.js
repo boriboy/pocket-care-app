@@ -9,7 +9,7 @@ export default class Medications extends Component {
 
     this.state = {
       data: props.data,
-      loaded: props.data
+      loaded: props.loaded
     }
   }
 
