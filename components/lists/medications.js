@@ -1,110 +1,78 @@
 import React, { Component } from 'react';
 import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Fetcher from '../../app/logic/fetcher';
-import IntakeIndicator from '../../components/intakeIndicator';
+import MedicationItem from '../../components/medicationItem';
 
 export default class Medications extends Component {
-  constructor(props) {
-    super(props)
+	constructor(props) {
+		super(props)
 
-    this.state = {
-      data: props.data,
-      loaded: props.loaded
-    }
-  }
+		// bind methods
+		this.deleteMedication = this.deleteMedication.bind(this)
 
-  __syncState(data) {
-    console.log(`inside sync state - ${data}`)
-    this.setState(data)
-  }
+		this.state = {
+			data: props.data,
+			loaded: props.loaded
+		}
+	}
 
-  _deleteItem(id) {
-    console.log(`Deleting ${id}`);
-    Fetcher.del(`med/${id}`)
-      .then(res => {
-        this.__syncState({data: res.data, loaded:true})
-    }).catch(err => console.log(err))
-  }
+	__syncState(data) {
+		console.log(`inside sync state - ${data}`)
+		this.setState(data)
+	}
 
-  promptDelete(med) {
-    Alert.alert(`Delete ${med.title}`, `are you sure?`, [
-      {text: 'Nah', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
-      {text: 'Yep', onPress: () => this._deleteItem(med._id)}
-    ])
-  }
+	_renderLoader() {
+		return (
+		<View style={styles.loaderContainer}>
+			<Text>{'fetching meds'}</Text>
+		</View>
+		)
+	}
 
-  _renderItem(med) {
-    return (
-      <TouchableOpacity style={styles.itemContainer}
-        onLongPress={() => this.promptDelete(med)}>
-        <Text style={styles.medicationTitle}>{med.title}</Text>
-        <IntakeIndicator freq={med.freq} taken={med.freq} />
-        {/*+<Text style={styles.medicationTitle}>0</Text>*/}
-      </TouchableOpacity>
-    )
-  }
+	shouldComponentUpdate(nextProps, nextState) {
+		console.log('inside medications shouldComponentUpdate')
 
-  _renderLoader() {
-    return (
-      <View style={styles.loaderContainer}>
-        <Text>{'fetching meds'}</Text>
-      </View>
-    )
-  }
+		if (this.props.data !== nextProps.data) {
+			console.log('props changed')
+			this.__syncState(nextProps)
+			return true
+		} else {
+			return this.state.data !== nextState.data
+		}
+	}
+  
+  	deleteMedication(item) {
+		console.log(`Deleting ${item._id}`)
+		Fetcher.del(`med/${item._id}`)
+			.then(res => {
+				console.log(`Success deleting ${item._id}`)
+				this.setState({data: res.data, loaded: true})
+		}).catch(err => console.log(err))
+	}
 
-  shouldComponentUpdate(nextProps, nextState) {
-    console.log('inside medications shouldComponentUpdate')
+	render() {
+		console.log('rendering medications with data', this.state.data)
 
-    if (this.props.data !== nextProps.data) {
-      this.__syncState(nextProps)
-      return true
-    } else {
-      return this.state.data !== nextState.data
-    }
-  }
-
-  render() {
-    console.log('rendering medications')
-
-    // loader while async request processing
-    if (!this.state.loaded) {
-      return (this._renderLoader())
-    } else {
-      return (
-        <FlatList
-          data={this.state.data}
-          renderItem={({item}) => {
-            if (item.title)
-              return (this._renderItem(item))
-          }}
-          keyExtractor={(item, index) => index}
-        />
-    )}
-  }
+		// loader while async request processing
+		if (!this.state.loaded) {
+			return (this._renderLoader())
+		} else {
+			return (
+				<FlatList
+				data={this.state.data}
+				renderItem={({item}) => {
+					return (<MedicationItem medication={item} deleteMethod={this.deleteMedication}/>)
+				}}
+				keyExtractor={(item, index) => item._id}
+				/>
+			)}
+	}
 }
 
 const styles = StyleSheet.create({
-  itemContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: 70,
-    borderBottomColor: '#6f777e',
-    borderBottomWidth: 1,
-    paddingLeft: 30,
-    paddingRight: 30,
-  },
-
   loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-  medicationTitle: {
-    fontSize: 20,
-    textAlign: 'center',
-    color: '#000',
   }
 })

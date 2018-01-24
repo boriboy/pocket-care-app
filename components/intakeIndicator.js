@@ -3,18 +3,10 @@ import { AppRegistry, StyleSheet, TouchableWithoutFeedback, View, Text } from 'r
 import Fetcher from '../app/logic/fetcher'
 
 export default class IntakeIndicator extends Component {
-  constructor(props) {
-    super(props)
-
-    let isComplete = props.freq === props.taken;
-
-    this.state = {
-      complete: isComplete
-    }
-  }
 
   _indicatorStyle() {
-    let color = this.state.complete ? maxIntakeCount : minIntakeCount
+    // let color = this.state.complete ? maxIntakeCount : minIntakeCount
+    let color = '#a8e4a8'
 
     return {
       borderRadius:50,
@@ -30,7 +22,7 @@ export default class IntakeIndicator extends Component {
 
   render() {
     return (
-      <TouchableWithoutFeedback onPress={() => this._tempToggle()}>
+      <TouchableWithoutFeedback onPress={() => this.props.onTake(this.props.medication)}>
         <View style={this._indicatorStyle()}><Text></Text></View>
       </TouchableWithoutFeedback>
     )

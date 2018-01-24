@@ -44,7 +44,19 @@ export default class Fetcher {
     return this.fetch( serverApiUri + url , delRequest() )
   }
 
+  static put(url : string) {
+	let putRequest = function() {
+		return Object.assign(
+		  requestHeaders,
+		  putConfig
+		)}
+  
+	  // submit request
+	  return this.fetch( serverApiUri + url , putRequest() )
+  }
+
   static fetch (uri : string, config : object) {
+	  console.log('REQUESTING ', uri)
     return fetch(uri, config).then(res => res.json())
   }
 
@@ -80,6 +92,10 @@ const getConfig = {
 
 const delConfig = {
   method: 'DELETE'
+}
+
+const putConfig = {
+  method: 'PUT'
 }
 
 const requestHeaders = {
