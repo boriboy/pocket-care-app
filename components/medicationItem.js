@@ -1,7 +1,8 @@
-import React, { Component } from 'react';
-import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import Fetcher from '../app/logic/fetcher';
-import IntakeIndicator from './intakeIndicator';
+import React, { Component } from 'react'
+import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import Fetcher from '../app/logic/fetcher'
+import IntakeIndicator from './intakeIndicator'
+import _ from 'lodash'
 
 export default class MedicationItem extends Component {
     constructor(props) {
@@ -35,6 +36,25 @@ export default class MedicationItem extends Component {
 		])
     }
 
+    takenToday() {
+        // init start of day
+        let today = new Date()
+        today.setHours(0)
+        today.setMinutes(0)
+        today.setSeconds(0)
+
+        // count intakes occured since start of day
+        let takenToday = _.filter(this.state.data.intakes, intake => {
+            return new Date(intake.created_at) > today.getTime()
+        })
+
+        // console.log(takenToday)
+        console.log('intakes: ', this.state.data.intakes)
+
+        // return intake count
+        return takenToday.length
+    }
+
     render() {
         let med = this.state.data;
 
@@ -43,6 +63,7 @@ export default class MedicationItem extends Component {
                 onLongPress={() => this.promptDelete()}>
                 <Text style={styles.medicationTitle}>{med.title}</Text>
                 <Text>{med.intakes.length}/{med.frequency ? med.frequency : 1}</Text>
+                <Text>{this.takenToday()}/{med.frequency ? med.frequency : 1}</Text>
                 <IntakeIndicator medication={med} onTake={this.take} />
             </TouchableOpacity>
         )
