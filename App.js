@@ -46,7 +46,8 @@ export default class App extends React.Component {
               <NavigationBar title={'NEW MEDICATION'} height={0}/>
               <View style={styles.inputsContainer}>
                 <TextInput style={[styles.input, styles.title]} placeholder={'medication name'} onChangeText={text => this.__onChangeText('title', text)} />
-                <TextInput style={[styles.input, styles.freq]} placeholder={'daily intake frequency'} onChangeText={text => this.__onChangeText('freq', text)} />
+                <TextInput style={[styles.input, styles.freq]} placeholder={'daily intake frequency'} onChangeText={text => this.__onChangeText('freq', text)} 
+					keyboardType={'numeric'}/>
                 <TextInput style={[styles.input, styles.notes]} placeholder={'notes'} multiline={true} onChangeText={text => this.__onChangeText('notes', text)} />
               </View>
 
@@ -67,7 +68,7 @@ export default class App extends React.Component {
             <Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
           </View>
 
-          <Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
+		  <Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
         </View>
 
         <Modal
