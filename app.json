@@ -6,7 +6,6 @@
     "sdkVersion": "23.0.0",
     "privacy": "unlisted",
     "version": "0.0.1",
-    "sdkVersion": "23.0.0",
     "ios": {
       "bundleIdentifier": "com.libo.pocketcare"
     },
