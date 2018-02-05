@@ -16,62 +16,63 @@ export default class App extends React.Component {
 		// initialize firebase
 		firebase.initializeApp(Config.firebase)
 
+		// set default state 
 		this.state = defaultState
 
-		// call server for medications
-		Fetcher.get('med').then(res => {
-			console.log('fetched meds in App.js')
-			this.setState(Object.assign(defaultState, {meds: res.data, medsLoaded: true}))
-		})
+		// bind methods
+		this._onMedCreated = this._onMedCreated.bind(this)
+		this.updateMedList = this.updateMedList.bind(this)
+		this.createMed = this.createMed.bind(this)
+
+		// call database for medications
+		Medication.getAndListen(this.updateMedList)
+
+		// ignoring warnings
+		console.ignoredYellowBox = ['Setting a timer'];
+	}
+
+	updateMedList(snapshot) {
+		console.log('state', this.state)
+		this.setState({meds: Object.values(snapshot.val()), medsLoaded: true, newMedModalActive: false})
 	}
 
 	__onChangeText(name, value) {
 		this.setState(prevState => Object.assign(prevState, {[name]: value}))
 	}
 
-	_resetState() {
-		this.setState(defaultState)
+	_onMedCreated(res) {
+		// ON MED CREATE "https://pocketcare-2d66d.firebaseio.com/meds/-L4GWuunyZx02ms49RzN"
+
+		this.setState({newMedModalActive: false, meds: res.data})
 	}
 
-	_onMedCreate(res) {
-		this.setState({newMedModalActive: false, meds: res.data, updateMedicationsComponent: true})
-		// todo: add ui ack
-	}
-
-	_createMed() {
-		Fetcher.post('med', this.state)
-			// .then(this._onMedCreate)
-			.then(res => this._onMedCreate(res))
+	createMed() {
+		Medication.create(this.state.title, this.state.freq, this.state.notes)
 			.catch(err => Alert.alert('Something went wrong :('))
 	}
 			
-			_getModalContent() {
-				return (
-				<View style={styles.modalBackground}>
-					<ScrollView>
-						<View style={styles.modalInnerContainer}>
-							<NavigationBar title={'NEW MEDICATION'} height={0}/>
-							<View style={styles.inputsContainer}>
-								<TextInput style={[styles.input, styles.title]} placeholder={'medication name'} onChangeText={text => this.__onChangeText('title', text)} />
-								<TextInput style={[styles.input, styles.freq]} placeholder={'daily intake frequency'} onChangeText={text => this.__onChangeText('freq', text)} 
-					keyboardType={'numeric'}/>
-								<TextInput style={[styles.input, styles.notes]} placeholder={'notes'} multiline={true} onChangeText={text => this.__onChangeText('notes', text)} />
-							</View>
-
-							<Button title={'do it'} onPress={() => this._createMed()} />
+	_getModalContent() {
+		return (
+			<View style={styles.modalBackground}>
+				<ScrollView>
+					<View style={styles.modalInnerContainer}>
+						<NavigationBar title={'NEW MEDICATION'} height={0}/>
+						<View style={styles.inputsContainer}>
+							<TextInput style={[styles.input, styles.title]} placeholder={'medication name'} onChangeText={text => this.__onChangeText('title', text)} />
+							<TextInput style={[styles.input, styles.freq]} placeholder={'daily intake frequency'} onChangeText={text => this.__onChangeText('freq', text)} 
+				keyboardType={'numeric'}/>
+							<TextInput style={[styles.input, styles.notes]} placeholder={'notes'} multiline={true} onChangeText={text => this.__onChangeText('notes', text)} />
 						</View>
-					</ScrollView>
-				</View>
+
+						<Button title={'do it'} onPress={this.createMed} />
+					</View>
+				</ScrollView>
+			</View>
 		)
 	}
 
-	testFirebase() {
-		// test database set
-		firebase.database().ref('meds').set(this.state.meds)
-	}
-
 	testModel() {
-		Medication.create()
+		
 	}
 
 	render() {

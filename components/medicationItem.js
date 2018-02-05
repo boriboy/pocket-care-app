@@ -7,7 +7,7 @@ import _ from 'lodash'
 export default class MedicationItem extends Component {
     constructor(props) {
       super(props)
-  
+
       this.take = this.take.bind(this)
       
       this.state = {
@@ -20,7 +20,6 @@ export default class MedicationItem extends Component {
     }
 
     take(item) {
-        console.log('inside take')
         // server call to create intake
         Fetcher.put(`med/take/${item._id}/${new Date().getTime()}`)
             // .then(res => this.update(res.data))
@@ -48,9 +47,6 @@ export default class MedicationItem extends Component {
             return new Date(intake.created_at) > today.getTime()
         })
 
-        // console.log(takenToday)
-        console.log('intakes: ', this.state.data.intakes)
-
         // return intake count
         return takenToday.length
     }
@@ -61,8 +57,8 @@ export default class MedicationItem extends Component {
         return (
             <TouchableOpacity style={styles.itemContainer}
                 onLongPress={() => this.promptDelete()}>
-                <Text style={styles.medicationTitle}>{med.title}</Text>
-                <Text>{med.intakes.length}/{med.frequency ? med.frequency : 1}</Text>
+                <Text style={styles.medicationTitle}>{med.name}</Text>
+                <Text>{1}/{med.frequency ? med.frequency : 1}</Text>
                 <Text>{this.takenToday()}/{med.frequency ? med.frequency : 1}</Text>
                 <IntakeIndicator medication={med} onTake={this.take} />
             </TouchableOpacity>

@@ -17,7 +17,6 @@ export default class Medications extends Component {
 	}
 
 	__syncState(data) {
-		console.log(`inside sync state - ${data}`)
 		this.setState(data)
 	}
 
@@ -30,13 +29,12 @@ export default class Medications extends Component {
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		console.log('inside medications shouldComponentUpdate')
-
 		if (this.props.data !== nextProps.data) {
 			console.log('props changed')
 			this.__syncState(nextProps)
 			return true
 		} else {
+			console.log((this.state.data !== nextState.data) ?'STATE CHANGED' : 'STATE THE SAME')
 			return this.state.data !== nextState.data
 		}
 	}
@@ -51,19 +49,17 @@ export default class Medications extends Component {
 	}
 
 	render() {
-		console.log('rendering medications with data', this.state.data)
-
 		// loader while async request processing
 		if (!this.state.loaded) {
 			return (this._renderLoader())
 		} else {
 			return (
 				<FlatList
-				data={this.state.data}
-				renderItem={({item}) => {
-					return (<MedicationItem medication={item} deleteMethod={this.deleteMedication}/>)
-				}}
-				keyExtractor={(item, index) => item._id}
+					data={this.state.data}
+					keyExtractor={(item, index) => index}
+					renderItem={({item}) => {
+						return (<MedicationItem medication={item} deleteMethod={this.deleteMedication}/>)
+					}}
 				/>
 			)}
 	}
