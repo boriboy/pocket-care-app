@@ -5,6 +5,10 @@ export default class MedicationModel {
         return firebase.database().ref('meds').push({name, freq, notes})
     }
 
+    static delete(key) {
+        return firebase.database().ref(`meds/${key}`).remove()
+    }
+
     // returns all meds of a user
     static getAndListen(callback) {
         return firebase.database().ref('meds').on('value', callback)

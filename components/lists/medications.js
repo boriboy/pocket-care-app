@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
-import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { AppRegistry, FlatList, Button, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Fetcher from '../../app/logic/fetcher';
 import MedicationItem from '../../components/medicationItem';
+
+// models
+import Medication from '../../app/models/med'
 
 export default class Medications extends Component {
 	constructor(props) {
@@ -30,22 +33,25 @@ export default class Medications extends Component {
 
 	shouldComponentUpdate(nextProps, nextState) {
 		if (this.props.data !== nextProps.data) {
-			console.log('props changed')
 			this.__syncState(nextProps)
 			return true
 		} else {
-			console.log((this.state.data !== nextState.data) ?'STATE CHANGED' : 'STATE THE SAME')
 			return this.state.data !== nextState.data
 		}
 	}
   
-  	deleteMedication(item) {
-		console.log(`Deleting ${item._id}`)
-		Fetcher.del(`med/${item._id}`)
-			.then(res => {
-				console.log(`Success deleting ${item._id}`)
-				this.setState({data: res.data, loaded: true})
-		}).catch(err => console.log(err))
+  	deleteMedication(key) {
+		console.log(`Deleting ${key}`)
+		Medication.delete(key).catch(err => {
+			console.log(err)
+			Alert.alert('Deleting went wrong :(')
+	})
+
+		// Fetcher.del(`med/${item._id}`)
+		// 	.then(res => {
+		// 		console.log(`Success deleting ${item._id}`)
+		// 		this.setState({data: res.data, loaded: true})
+		// }).catch(err => console.log(err))
 	}
 
 	render() {
@@ -56,7 +62,7 @@ export default class Medications extends Component {
 			return (
 				<FlatList
 					data={this.state.data}
-					keyExtractor={(item, index) => index}
+					keyExtractor={item => item.key}
 					renderItem={({item}) => {
 						return (<MedicationItem medication={item} deleteMethod={this.deleteMedication}/>)
 					}}

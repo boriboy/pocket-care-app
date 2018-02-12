@@ -1,12 +1,19 @@
-import React from 'react';
-import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView } from 'react-native';
-import NavigationBar from './components/nav';
-import Medications from './components/lists/medications';
-import Fetcher from './app/logic/fetcher';
-import Config from './app/config';
-import * as firebase from 'firebase';
-import { initializeApp } from 'firebase';
-import Medication from './app/models/med';
+import React from 'react'
+import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView } from 'react-native'
+import NavigationBar from './components/nav'
+import Medications from './components/lists/medications'
+import Fetcher from './app/logic/fetcher'
+import Config from './app/config'
+
+// firebase
+import * as firebase from 'firebase'
+import { initializeApp } from 'firebase'
+
+// models
+import Medication from './app/models/med'
+
+// ext libs
+import _ from 'lodash'
 
 export default class App extends React.Component {
 
@@ -32,8 +39,13 @@ export default class App extends React.Component {
 	}
 
 	updateMedList(snapshot) {
-		console.log('state', this.state)
-		this.setState({meds: Object.values(snapshot.val()), medsLoaded: true, newMedModalActive: false})
+		// inject med key into med object
+		let mapped = _.map(snapshot.val(), (item, index) => {
+			item.key = index
+			return item
+		})
+
+		this.setState({meds: Object.values(mapped), medsLoaded: true, newMedModalActive: false})
 	}
 
 	__onChangeText(name, value) {
@@ -86,7 +98,6 @@ export default class App extends React.Component {
 					</View>
 
 			<Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
-			<Button title={'Bloop'} onPress={() => this.testModel()} />
 				</View>
 
 				<Modal

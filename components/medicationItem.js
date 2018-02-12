@@ -27,10 +27,10 @@ export default class MedicationItem extends Component {
     }
 
     promptDelete() {
-        Alert.alert(`Delete ${this.state.data.title}`, `are you sure?`, [
+        Alert.alert(`Delete ${this.state.data.name}`, `are you sure?`, [
 			{text: 'Nah', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
 			{text: 'Yep', onPress: () => {
-				this.props.deleteMethod(this.state.data)
+				this.props.deleteMethod(this.state.data.key)
 			}}
 		])
     }
