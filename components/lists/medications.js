@@ -45,15 +45,10 @@ export default class Medications extends Component {
 		Medication.delete(key).catch(err => {
 			console.log(err)
 			Alert.alert('Deleting went wrong :(')
-	})
-
-		// Fetcher.del(`med/${item._id}`)
-		// 	.then(res => {
-		// 		console.log(`Success deleting ${item._id}`)
-		// 		this.setState({data: res.data, loaded: true})
-		// }).catch(err => console.log(err))
+		})
 	}
 
+		
 	render() {
 		// loader while async request processing
 		if (!this.state.loaded) {

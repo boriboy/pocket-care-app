@@ -1,41 +1,62 @@
 import React from 'react'
-import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView } from 'react-native'
+import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView, Image } from 'react-native'
 import NavigationBar from './components/nav'
 import Medications from './components/lists/medications'
 import Fetcher from './app/logic/fetcher'
 import Config from './app/config'
+import RegisterNotifications from './app/notifications'
+import { StackNavigator, NavigationActions } from 'react-navigation'
+import { Facebook } from './app/social.js'
 
 // firebase
 import * as firebase from 'firebase'
-import { initializeApp } from 'firebase'
 
 // models
 import Medication from './app/models/med'
+import Notification from './app/models/notification';
 
 // ext libs
 import _ from 'lodash'
 
-export default class App extends React.Component {
+class Home extends React.Component {
+
+	static navigationOptions = {
+		title: 'MY MEDS',
+		headerStyle: {
+			backgroundColor: '#698baa',
+		},
+		headerTitleStyle: {
+			fontWeight: 'bold',
+		},
+	}
+
+	state = defaultState
 
 	constructor(props) {
 		super(props)
 
-		// initialize firebase
-		firebase.initializeApp(Config.firebase)
-
-		// set default state 
-		this.state = defaultState
+		console.log('HOME CONSTRUCT')
 
 		// bind methods
 		this._onMedCreated = this._onMedCreated.bind(this)
 		this.updateMedList = this.updateMedList.bind(this)
 		this.createMed = this.createMed.bind(this)
+		this.test = this.test.bind(this)
+		this.test2 = this.test2.bind(this)
+		this.onSignout = this.onSignout.bind(this)
 
-		// call database for medications
-		Medication.getAndListen(this.updateMedList)
+		// register expo push token
+		RegisterNotifications()
+			.then(token => Notification.save(token))
+			.catch(err => console.log('error getting token: ', err))
 
 		// ignoring warnings
 		console.ignoredYellowBox = ['Setting a timer'];
+	}
+
+	componentDidMount() {
+		// call database for medications
+		Medication.getAndListen(this.updateMedList)
 	}
 
 	updateMedList(snapshot) {
@@ -83,21 +104,30 @@ export default class App extends React.Component {
 		)
 	}
 
-	testModel() {
-		
+	onSignout() {
+		resetNavigationStack('Login', this.props.navigation)
+	}
+
+	test() {
+		firebase.auth().signOut().then(this.onSignout)
+	}
+
+	test2() {
+		console.log(this.props.navigation.state)
 	}
 
 	render() {
 		return (
 			 <View style={styles.global}>
-				<NavigationBar title={'MY MEDS'} height={'11%'}/>
+				{/* <NavigationBar title={'MY MEDS'} height={'11%'}/> */}
 
 				<View style={styles.mainContainer}>
 					<View style={styles.medsScrollView}>
 						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
 					</View>
 
-			<Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
+					<Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
+					<Button title={'logout'} onPress={this.test} />
 				</View>
 
 				<Modal
@@ -114,6 +144,138 @@ export default class App extends React.Component {
 		)
 	}
 }
+
+class Login extends React.Component {
+	static navigationOptions = {
+		title: 'Login',
+	}
+
+	constructor(props) {
+		super(props)
+
+		this.onLogin = this.onLogin.bind(this)
+	}
+
+	componentDidMount() {
+		// console.log('Login mounted')
+
+		//  else {
+		// 		// logout
+		// 		console.log('user is out')
+
+		// 		// change to Login screen if not current
+		// 		if (navigation.state.routeName !== 'Login') {
+		// 			const resetToLogin = NavigationActions.reset({
+		// 				index: 0,
+		// 				actions: [NavigationActions.navigate({ routeName: 'Login' })],
+		// 			})
+	
+		// 			// dispatch reset
+		// 			navigation.dispatch(resetToLogin)
+		// 		}
+		// 	}
+		// })
+	}
+
+	onLogin() {
+		console.log('inside on login biatch')
+		resetNavigationStack('Home', this.props.navigation)
+	}
+
+	googleLogin() {
+		firebase.auth()
+		console.log('google login')
+	}
+	
+	
+	facebookLogin() {
+		Facebook.login().then(this.onLogin)
+	}
+
+	render() {
+		return (
+			<View style={{flex: 1, flexDirection: 'column'}}>
+				<Button title={'google'} onPress={() => this.googleLogin()}/>
+				<Button title={'facebook'} onPress={() => this.facebookLogin()}/>
+			</View>
+		)
+	}
+}
+
+class PostSplash extends React.Component {
+	static navigationOptions = {
+		header: null
+	}
+	
+	render() {
+		return (
+			<View style={{flex:1}}>
+				<Image
+					resizeMode={'cover'}
+					style={{height:'100%', width:'100%'}}
+					source={require('./app/img/splash.png')}
+				/>
+			</View>
+		)
+	}
+
+	unsubscribeAfterAuthResolved() {
+		this.state.unsubscriber()
+	}
+
+	componentDidMount() {
+		var unsubscribeAuthObserver = firebase.auth().onAuthStateChanged(user => {
+			console.log('POST SPLASHES AUTHSTATECHANGE')
+			let goTo = user ? 'Home' : 'Login'
+			
+			resetNavigationStack(goTo, this.props.navigation)
+
+			// trigger unsubscriber
+			this.unsubscribeAfterAuthResolved()
+		})
+
+		// save unsubscriber
+		this.setState({unsubscriber: unsubscribeAuthObserver})
+	}
+}
+
+export default class App extends React.Component {
+	render() {
+		return (<LoginAsRootStack />)
+	}
+}
+
+const resetNavigationStack = function(to, navigation) {
+	var navigationActions = NavigationActions.reset({
+		index: 0,
+		actions: [NavigationActions.navigate({ routeName: to })],
+	})
+
+	// dispatch reset
+	navigation.dispatch(navigationActions)
+}
+
+const routeConfigMap = {
+	PostSplash: {
+		screen: PostSplash,
+	},
+
+	Login: {
+		screen: Login,
+	},
+
+	Home: {
+		screen: Home,
+	}
+}
+
+const LoginAsRootStack = StackNavigator(routeConfigMap, {
+	initialRouteName : "PostSplash",
+});
+
+const HomeAsRootStack = StackNavigator(routeConfigMap, {
+	initialRouteName : "Home",
+});
 
 const defaultState = {
 	newMedModalActive: false,

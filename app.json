@@ -6,6 +6,9 @@
     "sdkVersion": "23.0.0",
     "privacy": "unlisted",
     "version": "0.0.1",
+    "splash": {
+      "image": "./app/img/splash.png"
+    },
     "ios": {
       "bundleIdentifier": "com.libo.pocketcare"
     },
