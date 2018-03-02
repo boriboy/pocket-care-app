@@ -21,9 +21,9 @@ export default class MedicationItem extends Component {
 
     take(item) {
         // server call to create intake
-        Fetcher.put(`med/take/${item._id}/${new Date().getTime()}`)
+        // Fetcher.put(`med/take/${item._id}/${new Date().getTime()}`)
             // .then(res => this.update(res.data))
-            .then(res => this.update(res.data))
+            // .then(res => this.update(res.data))
     }
 
     promptDelete() {

@@ -6,7 +6,7 @@ import Fetcher from './app/logic/fetcher'
 import Config from './app/config'
 import RegisterNotifications from './app/notifications'
 import { StackNavigator, NavigationActions } from 'react-navigation'
-import { Facebook } from './app/social.js'
+import { Facebook, Google } from './app/social'
 
 // firebase
 import * as firebase from 'firebase'
@@ -34,8 +34,6 @@ class Home extends React.Component {
 
 	constructor(props) {
 		super(props)
-
-		console.log('HOME CONSTRUCT')
 
 		// bind methods
 		this._onMedCreated = this._onMedCreated.bind(this)
@@ -178,13 +176,11 @@ class Login extends React.Component {
 	}
 
 	onLogin() {
-		console.log('inside on login biatch')
 		resetNavigationStack('Home', this.props.navigation)
 	}
 
 	googleLogin() {
-		firebase.auth()
-		console.log('google login')
+		Google.login().then(this.onLogin)
 	}
 	
 	
