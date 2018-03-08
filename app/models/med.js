@@ -11,10 +11,11 @@ export default class MedicationModel {
 
     // returns all meds of a user
     static getAndListen(callback) {
+        console.log(firebase.auth().currentUser)
         return firebase.database().ref(`meds/${firebase.auth().currentUser.uid}`).on('value', callback)
     }
 
     static take(id, callback){
-        return firebase.database().ref(`intakes/${id}`).push({date: new Date()})
+        return firebase.database().ref(`intakes/${firebase.auth().currentUser.uid}/${id}`).push({date: new Date()})
     }
 }

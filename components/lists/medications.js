@@ -54,12 +54,14 @@ export default class Medications extends Component {
 		if (!this.state.loaded) {
 			return (this._renderLoader())
 		} else {
+			var isEven = false
 			return (
 				<FlatList
 					data={this.state.data}
 					keyExtractor={item => item.key}
 					renderItem={({item}) => {
-						return (<MedicationItem medication={item} deleteMethod={this.deleteMedication}/>)
+						isEven = !isEven
+						return (<MedicationItem medication={item} deleteMethod={this.deleteMedication} isEven={isEven}/>)
 					}}
 				/>
 			)}

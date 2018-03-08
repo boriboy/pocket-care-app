@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView, Image } from 'react-native'
+import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView, Image, TouchableOpacity, TouchableNativeFeedback, TimePickerAndroid } from 'react-native'
 import NavigationBar from './components/nav'
 import Medications from './components/lists/medications'
 import Fetcher from './app/logic/fetcher'
@@ -21,13 +21,18 @@ import _ from 'lodash'
 class Home extends React.Component {
 
 	static navigationOptions = {
-		title: 'MY MEDS',
-		headerStyle: {
-			backgroundColor: '#698baa',
-		},
-		headerTitleStyle: {
-			fontWeight: 'bold',
-		},
+		header: null
+	}
+
+	backgroundsIndexMap = {
+		0: require('./app/img/backgrounds/0.jpg'),
+		1: require('./app/img/backgrounds/1.jpg'),
+		2: require('./app/img/backgrounds/2.jpg'),
+		3: require('./app/img/backgrounds/3.jpg'),
+		4: require('./app/img/backgrounds/4.jpg'),
+		5: require('./app/img/backgrounds/5.jpg'),
+		6: require('./app/img/backgrounds/6.jpg'),
+		7: require('./app/img/backgrounds/7.jpg'),
 	}
 
 	state = defaultState
@@ -39,22 +44,37 @@ class Home extends React.Component {
 		this._onMedCreated = this._onMedCreated.bind(this)
 		this.updateMedList = this.updateMedList.bind(this)
 		this.createMed = this.createMed.bind(this)
-		this.test = this.test.bind(this)
-		this.test2 = this.test2.bind(this)
 		this.onSignout = this.onSignout.bind(this)
 
-		// register expo push token
-		RegisterNotifications()
-			.then(token => Notification.save(token))
-			.catch(err => console.log('error getting token: ', err))
+		// sets one of background images for current session
+		this.setBackgroundImage()
 
 		// ignoring warnings
 		console.ignoredYellowBox = ['Setting a timer'];
 	}
 
+	setBackgroundImage() {
+		let backgroundImageIndex = getRandomInt(0,7)
+		this.state = Object.assign(this.state, {backgroundImageIndex})
+	}
+
+	getBackground() {
+		return this.backgroundsIndexMap[this.state.backgroundImageIndex]
+	}
+
 	componentDidMount() {
-		// call database for medications
-		Medication.getAndListen(this.updateMedList)
+		// register auth listener
+		let authSubscribtion = firebase.auth().onAuthStateChanged(user => {
+			if (user) {
+				// register expo push token
+				RegisterNotifications()
+					.then(token => Notification.save(token))
+					.catch(err => console.log('error getting token: ', err))
+
+				// call database for medications
+				Medication.getAndListen(this.updateMedList)
+			}
+		})
 	}
 
 	updateMedList(snapshot) {
@@ -106,18 +126,48 @@ class Home extends React.Component {
 		resetNavigationStack('Login', this.props.navigation)
 	}
 
-	test() {
-		firebase.auth().signOut().then(this.onSignout)
-	}
-
-	test2() {
-		console.log(this.props.navigation.state)
-	}
-
 	render() {
 		return (
+			<View style={{flex: 1, flexDirection: 'column'}}>
+				{/* background image */}
+				<View style={{position: 'absolute',width: '100%',height: '100%',}}>
+					<Image style={{flex: 1, resizeMode:'cover'}}
+						source={this.getBackground()}/>
+				</View>
+
+				{/* personal area */}
+					<View style={{flex:1, flexDirection: 'column', justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)'}}>
+						<Text style={{fontSize: 40}}>My Meds</Text>
+
+						<Image 
+							style={{height:100, width:100, borderRadius: 50}}
+							source={{uri: firebase.auth().currentUser.photoURL}}/>
+
+						<Text style={{fontSize: 20}}>{firebase.auth().currentUser.displayName}</Text>
+					</View>
+				{/* meds list */}
+					<View style={{flex:2}}>
+						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
+						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateModal')}}
+							background={TouchableNativeFeedback.SelectableBackground()}>
+							<View style={{
+								alignItems: 'center',
+								justifyContent: 'center',
+								height: 50,
+								paddingLeft: 30,
+								paddingRight: 30,
+								backgroundColor: 'rgba(255,255,255,0.9)'}}>
+								<Text>+ Add Medication</Text>
+							</View>
+						</TouchableNativeFeedback>
+					</View>
+			</View>
+		)
+	}
+
+	OLD_render() {
+		return (
 			 <View style={styles.global}>
-				{/* <NavigationBar title={'MY MEDS'} height={'11%'}/> */}
 
 				<View style={styles.mainContainer}>
 					<View style={styles.medsScrollView}>
@@ -143,36 +193,29 @@ class Home extends React.Component {
 	}
 }
 
+class CreateMedicationScreen extends React.Component {
+	render() {
+	  return (
+		<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+		  <Text style={{ fontSize: 30 }}>This is a modal!</Text>
+		  <Button
+			onPress={() => this.props.navigation.goBack()}
+			title="Dismiss"
+		  />
+		</View>
+	  );
+	}
+}
+
 class Login extends React.Component {
 	static navigationOptions = {
-		title: 'Login',
+		header: null,
 	}
 
 	constructor(props) {
 		super(props)
 
 		this.onLogin = this.onLogin.bind(this)
-	}
-
-	componentDidMount() {
-		// console.log('Login mounted')
-
-		//  else {
-		// 		// logout
-		// 		console.log('user is out')
-
-		// 		// change to Login screen if not current
-		// 		if (navigation.state.routeName !== 'Login') {
-		// 			const resetToLogin = NavigationActions.reset({
-		// 				index: 0,
-		// 				actions: [NavigationActions.navigate({ routeName: 'Login' })],
-		// 			})
-	
-		// 			// dispatch reset
-		// 			navigation.dispatch(resetToLogin)
-		// 		}
-		// 	}
-		// })
 	}
 
 	onLogin() {
@@ -188,11 +231,91 @@ class Login extends React.Component {
 		Facebook.login().then(this.onLogin)
 	}
 
+
 	render() {
 		return (
-			<View style={{flex: 1, flexDirection: 'column'}}>
-				<Button title={'google'} onPress={() => this.googleLogin()}/>
-				<Button title={'facebook'} onPress={() => this.facebookLogin()}/>
+			<View style={{flex: 1}}>
+				{/* background image */}
+				<View
+					style={{
+						position: 'absolute',
+						width: '100%',
+						height: '100%',
+					}}
+					>
+					<Image
+						style={{
+						flex: 1,
+						resizeMode:'cover',
+						opacity: 0.60,
+						}}
+						blurRadius={0.5}
+						source={require('./app/img/login-background.jpg')}
+					/>
+				</View>
+
+				<View style={{flex: 1, flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center'}}>
+				
+				{/* header */}
+					<View style={{flex: 1, height: 50}}>
+						<Text style={{fontSize: 50, padding: 50}}>PocketCare</Text>
+					</View>
+	
+				{/* social login section */}
+					<View style={{flex: 2, width: '100%', flexDirection: 'column', justifyContent: 'center'}}>
+						<Text style={{paddingBottom: 30, alignSelf: 'center'}}>
+							connect with
+						</Text>
+
+						{/* social images */}
+						<View style={{flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 100}}>
+							<TouchableOpacity onPress={() => this.facebookLogin()}>
+								<Image
+									style={styles.socialImage}
+									source={require('./app/img/fb.png')}
+								/>
+							</TouchableOpacity>
+
+							<TouchableOpacity onPress={() => this.googleLogin()}>
+								<Image
+									style={styles.socialImage}
+									source={require('./app/img/google.png')}
+								/>
+							</TouchableOpacity>
+
+							{/* timepicker test */}
+							<TouchableOpacity onPress={() => {
+								try {
+									TimePickerAndroid.open({
+										hour: 14,
+										minute: 0,
+										is24Hour: true, // Will display '2 PM'
+										mode: 'spinner'
+									}).then(({action, hour, minute}) => {
+										console.log(action, hour, minute);
+										if (action !== TimePickerAndroid.dismissedAction) {
+											// hour minute are set
+											var date = new Date()
+											date.setHours(hour)
+											date.setMinutes(minute)
+
+											console.log('the final date is: ', date)
+										}
+									})
+	
+									// console.log(action, hour, minute);
+								} catch({code, message}) {
+									console.warn('Cannot open time picker', message)
+								}
+								
+							}}>
+								<View style={{height:50, width:50, backgroundColor:'#fff'}}>
+
+								</View>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
 			</View>
 		)
 	}
@@ -237,7 +360,7 @@ class PostSplash extends React.Component {
 
 export default class App extends React.Component {
 	render() {
-		return (<LoginAsRootStack />)
+		return (<RootStack />)
 	}
 }
 
@@ -264,19 +387,50 @@ const routeConfigMap = {
 		screen: Home,
 	}
 }
+const MainStack = StackNavigator({
+	PostSplash: {
+		screen: PostSplash,
+	},
 
-const LoginAsRootStack = StackNavigator(routeConfigMap, {
+	Login: {
+		screen: Login,
+	},
+
+	Home: {
+		screen: Home,
+	}
+},{
 	initialRouteName : "PostSplash",
-});
+})
 
-const HomeAsRootStack = StackNavigator(routeConfigMap, {
-	initialRouteName : "Home",
-});
+const RootStack = StackNavigator(
+	{
+	  Main: {
+		screen: MainStack,
+	  },
+	  CreateModal: {
+		screen: CreateMedicationScreen,
+	  },
+	},
+	{
+	  mode: 'modal',
+	  headerMode: 'none',
+	}
+  );
 
 const defaultState = {
+	backgroundImageIndex: 4,
 	newMedModalActive: false,
 	medsLoaded: false,
 	meds: [],
+}
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive)
+ * Using Math.round() will give you a non-uniform distribution!
+ */
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 const styles = StyleSheet.create({
@@ -338,6 +492,11 @@ const styles = StyleSheet.create({
 		flex: 1,
 		flexDirection: 'column',
 		padding: 20,
+	},
+
+	socialImage : {
+		height: 85,
+		width: 85,
 	},
 
 	/* new medication inputs */

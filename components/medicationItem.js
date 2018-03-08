@@ -51,37 +51,44 @@ export default class MedicationItem extends Component {
         return takenToday.length
     }
 
+    getStyle() {
+        let opacity = this.props.isEven ? '0.75' : '0.90'
+
+        return {
+            flex: 1,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: 50,
+            paddingLeft: 30,
+            paddingRight: 30,
+            backgroundColor: `rgba(255,255,255,${opacity})`
+          }
+    }
+
     render() {
         let med = this.state.data;
 
         return (
-            <TouchableOpacity style={styles.itemContainer}
-                onLongPress={() => this.promptDelete()}>
-                <Text style={styles.medicationTitle}>{med.name}</Text>
-                <Text>{1}/{med.frequency ? med.frequency : 1}</Text>
-                <Text>{this.takenToday()}/{med.frequency ? med.frequency : 1}</Text>
-                <IntakeIndicator medication={med} onTake={this.take} />
+            <TouchableOpacity activeOpacity={0.9} style={this.getStyle()} onLongPress={() => this.promptDelete()}>
+                {/* med name */}
+                <View style={{flex: 2}}>
+                    <Text style={styles.medicationTitle}>{med.name}</Text>
+                </View>
+
+                {/* count & intake */}
+                <View style={{flex: 1, flexDirection: 'row', justifyContent:'space-around', alignItems: 'center'}}>
+                    <Text>{this.takenToday()}/{med.frequency ? med.frequency : 1}</Text>
+                    <IntakeIndicator medication={med} onTake={this.take} />
+                </View>
             </TouchableOpacity>
         )
     }
 }
 
 const styles = {
-    itemContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: 70,
-        borderBottomColor: '#6f777e',
-        borderBottomWidth: 1,
-        paddingLeft: 30,
-        paddingRight: 30,
-      },
-      
     medicationTitle: {
         fontSize: 20,
-        textAlign: 'center',
         color: '#000',
     }
 }

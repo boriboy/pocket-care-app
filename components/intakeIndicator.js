@@ -11,8 +11,8 @@ export default class IntakeIndicator extends Component {
     return {
       borderRadius:50,
       backgroundColor: color,
-      width:50,
-      height:50
+      width:10,
+      height:10
     }
   }
 
