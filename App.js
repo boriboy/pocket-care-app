@@ -35,7 +35,12 @@ class Home extends React.Component {
 		7: require('./app/img/backgrounds/7.jpg'),
 	}
 
-	state = defaultState
+	defaultState = {
+		backgroundImageIndex: 4,
+		newMedModalActive: false,
+		medsLoaded: false,
+		meds: [],
+	}
 
 	constructor(props) {
 		super(props)
@@ -44,11 +49,14 @@ class Home extends React.Component {
 		this._onMedCreated = this._onMedCreated.bind(this)
 		this.updateMedList = this.updateMedList.bind(this)
 		this.createMed = this.createMed.bind(this)
-		this.onSignout = this.onSignout.bind(this)
+		this.promptLogout = this.promptLogout.bind(this)
+		this.logout = this.logout.bind(this)
+		this.onLogout = this.onLogout.bind(this)
 
 		// sets one of background images for current session
-		this.setBackgroundImage()
-
+		let backgroundImageIndex = getRandomInt(0,7)
+		this.state = Object.assign(this.defaultState, {backgroundImageIndex})
+		
 		// ignoring warnings
 		console.ignoredYellowBox = ['Setting a timer'];
 	}
@@ -84,7 +92,9 @@ class Home extends React.Component {
 			return item
 		})
 
-		this.setState({meds: Object.values(mapped), medsLoaded: true, newMedModalActive: false})
+		this.setState(prevState => {
+			return Object.assign(prevState, {meds: Object.values(mapped), medsLoaded: true})
+		})
 	}
 
 	__onChangeText(name, value) {
@@ -94,7 +104,9 @@ class Home extends React.Component {
 	_onMedCreated(res) {
 		// ON MED CREATE "https://pocketcare-2d66d.firebaseio.com/meds/-L4GWuunyZx02ms49RzN"
 
-		this.setState({newMedModalActive: false, meds: res.data})
+		this.setState(prevState => {
+			return Object.assign(prevState, {meds: res.data})
+		})
 	}
 
 	createMed() {
@@ -122,7 +134,18 @@ class Home extends React.Component {
 		)
 	}
 
-	onSignout() {
+	promptLogout() {
+		Alert.alert('Logout', 'don\'t leave for long', [
+			{text: 'I promise', onPress:() => {this.logout()}, style: 'cancel'},
+		])
+	}
+
+	logout() {
+		console.log('inside logout')
+		firebase.auth().signOut().then(this.onLogout)
+	}
+
+	onLogout() {
 		resetNavigationStack('Login', this.props.navigation)
 	}
 
@@ -139,16 +162,18 @@ class Home extends React.Component {
 					<View style={{flex:1, flexDirection: 'column', justifyContent:'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)'}}>
 						<Text style={{fontSize: 40}}>My Meds</Text>
 
-						<Image 
-							style={{height:100, width:100, borderRadius: 50}}
-							source={{uri: firebase.auth().currentUser.photoURL}}/>
-
+						{/* avatar */}
+						<TouchableOpacity activeOpacity={0.6} onLongPress={this.promptLogout}>
+							<Image style={{height:100, width:100, borderRadius: 50}}
+								source={{uri: firebase.auth().currentUser.photoURL}}/>
+						</TouchableOpacity>
+						{/* user name */}
 						<Text style={{fontSize: 20}}>{firebase.auth().currentUser.displayName}</Text>
 					</View>
 				{/* meds list */}
 					<View style={{flex:2}}>
 						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
-						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateModal')}}
+						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateMedicationScreen')}}
 							background={TouchableNativeFeedback.SelectableBackground()}>
 							<View style={{
 								alignItems: 'center',
@@ -164,40 +189,44 @@ class Home extends React.Component {
 			</View>
 		)
 	}
-
-	OLD_render() {
-		return (
-			 <View style={styles.global}>
-
-				<View style={styles.mainContainer}>
-					<View style={styles.medsScrollView}>
-						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
-					</View>
-
-					<Button title={'CREATE MEDICATION'} onPress={() => this.setState({newMedModalActive: true})} />
-					<Button title={'logout'} onPress={this.test} />
-				</View>
-
-				<Modal
-					style={styles.modal}
-					visible={this.state.newMedModalActive}
-					onRequestClose={() => this.setState({newMedModalActive:false})}
-					animationType={'slide'}
-					hardwareAccelerated={true}
-					transparent={true}>
-					{this._getModalContent()}
-				</Modal>
-
-			</View>
-		)
-	}
 }
 
 class CreateMedicationScreen extends React.Component {
 	render() {
 	  return (
-		<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+		<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center'}}>
 		  <Text style={{ fontSize: 30 }}>This is a modal!</Text>
+
+			{/* timepicker test */}
+			<TouchableOpacity onPress={() => {
+				try {
+					TimePickerAndroid.open({
+						hour: 14,
+						minute: 0,
+						is24Hour: true, // Will display '2 PM'
+						mode: 'spinner'
+					}).then(({action, hour, minute}) => {
+						console.log(action, hour, minute);
+						if (action !== TimePickerAndroid.dismissedAction) {
+							// hour minute are set
+							var date = new Date()
+							date.setHours(hour)
+							date.setMinutes(minute)
+
+							console.log('the final date is: ', date)
+						}
+					})
+
+					// console.log(action, hour, minute);
+				} catch({code, message}) {
+					console.warn('Cannot open time picker', message)
+				}
+				
+			}}>
+				<View style={{height:50, width:50, backgroundColor:'#fff'}}>
+
+				</View>
+			</TouchableOpacity>
 		  <Button
 			onPress={() => this.props.navigation.goBack()}
 			title="Dismiss"
@@ -254,6 +283,7 @@ class Login extends React.Component {
 					/>
 				</View>
 
+				{/* content */}
 				<View style={{flex: 1, flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center'}}>
 				
 				{/* header */}
@@ -281,37 +311,6 @@ class Login extends React.Component {
 									style={styles.socialImage}
 									source={require('./app/img/google.png')}
 								/>
-							</TouchableOpacity>
-
-							{/* timepicker test */}
-							<TouchableOpacity onPress={() => {
-								try {
-									TimePickerAndroid.open({
-										hour: 14,
-										minute: 0,
-										is24Hour: true, // Will display '2 PM'
-										mode: 'spinner'
-									}).then(({action, hour, minute}) => {
-										console.log(action, hour, minute);
-										if (action !== TimePickerAndroid.dismissedAction) {
-											// hour minute are set
-											var date = new Date()
-											date.setHours(hour)
-											date.setMinutes(minute)
-
-											console.log('the final date is: ', date)
-										}
-									})
-	
-									// console.log(action, hour, minute);
-								} catch({code, message}) {
-									console.warn('Cannot open time picker', message)
-								}
-								
-							}}>
-								<View style={{height:50, width:50, backgroundColor:'#fff'}}>
-
-								</View>
 							</TouchableOpacity>
 						</View>
 					</View>
@@ -408,7 +407,7 @@ const RootStack = StackNavigator(
 	  Main: {
 		screen: MainStack,
 	  },
-	  CreateModal: {
+	  CreateMedicationScreen: {
 		screen: CreateMedicationScreen,
 	  },
 	},
@@ -418,12 +417,6 @@ const RootStack = StackNavigator(
 	}
   );
 
-const defaultState = {
-	backgroundImageIndex: 4,
-	newMedModalActive: false,
-	medsLoaded: false,
-	meds: [],
-}
 
 /**
  * Returns a random integer between min (inclusive) and max (inclusive)
