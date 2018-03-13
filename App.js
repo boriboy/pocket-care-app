@@ -7,6 +7,7 @@ import Config from './app/config'
 import RegisterNotifications from './app/notifications'
 import { StackNavigator, NavigationActions } from 'react-navigation'
 import { Facebook, Google } from './app/social'
+import Normalizer from './app/logic/normalizer'
 
 // firebase
 import * as firebase from 'firebase'
@@ -47,7 +48,7 @@ class Home extends React.Component {
 
 		// bind methods
 		this._onMedCreated = this._onMedCreated.bind(this)
-		this.updateMedList = this.updateMedList.bind(this)
+		this.onMedsRetreived = this.onMedsRetreived.bind(this)
 		this.createMed = this.createMed.bind(this)
 		this.promptLogout = this.promptLogout.bind(this)
 		this.logout = this.logout.bind(this)
@@ -80,17 +81,14 @@ class Home extends React.Component {
 					.catch(err => console.log('error getting token: ', err))
 
 				// call database for medications
-				Medication.getAndListen(this.updateMedList)
+				Medication.get(this.onMedsRetreived)
 			}
 		})
 	}
 
-	updateMedList(snapshot) {
-		// inject med key into med object
-		let mapped = _.map(snapshot.val(), (item, index) => {
-			item.key = index
-			return item
-		})
+	onMedsRetreived(snapshot) {
+		// inject med id into data
+		var mapped = _.map(snapshot.val(), Normalizer.adoptKey)
 
 		this.setState(prevState => {
 			return Object.assign(prevState, {meds: Object.values(mapped), medsLoaded: true})
@@ -171,17 +169,19 @@ class Home extends React.Component {
 						<Text style={{fontSize: 20}}>{firebase.auth().currentUser.displayName}</Text>
 					</View>
 				{/* meds list */}
-					<View style={{flex:2}}>
+					<View style={{flex:2, backgroundColor: 'rgba(255,255,255,0.5)'}}>
+					{/* list */}
 						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
-						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateMedicationScreen')}}
-							background={TouchableNativeFeedback.SelectableBackground()}>
+
+					{/* add med button */}
+						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateMedicationScreen')}}>
 							<View style={{
 								alignItems: 'center',
 								justifyContent: 'center',
 								height: 50,
 								paddingLeft: 30,
 								paddingRight: 30,
-								backgroundColor: 'rgba(255,255,255,0.9)'}}>
+								backgroundColor: '#5585542A'}}>
 								<Text>+ Add Medication</Text>
 							</View>
 						</TouchableNativeFeedback>
@@ -192,10 +192,29 @@ class Home extends React.Component {
 }
 
 class CreateMedicationScreen extends React.Component {
+	constructor(props) {
+		super(props)
+
+		this.submit = this.submit.bind(this)
+
+		this.state = {
+			name: '',
+			freq: '3',
+			notes: '',
+			date: false
+		}
+	}
+
+	submit() {
+		Medication.create(this.state.name, this.state.freq, this.state.notes)
+			.then(() => this.props.navigation.goBack())
+			.catch(err => Alert.alert('Something went wrong :('))
+	}
+
 	render() {
 	  return (
 		<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-		  <Text style={{ fontSize: 30 }}>This is a modal!</Text>
+		  <Text style={{ fontSize: 30 }}>Create med</Text>
 
 			{/* timepicker test */}
 			<TouchableOpacity onPress={() => {
@@ -214,6 +233,7 @@ class CreateMedicationScreen extends React.Component {
 							date.setMinutes(minute)
 
 							console.log('the final date is: ', date)
+							this.setState(prevState => Object.assign(prevState, {date}))
 						}
 					})
 
@@ -224,13 +244,33 @@ class CreateMedicationScreen extends React.Component {
 				
 			}}>
 				<View style={{height:50, width:50, backgroundColor:'#fff'}}>
-
+					<Text>Add Time</Text>
 				</View>
 			</TouchableOpacity>
-		  <Button
-			onPress={() => this.props.navigation.goBack()}
-			title="Dismiss"
-		  />
+
+			
+			<TextInput 
+				style={styles.textInput}
+				onChangeText={name => this.setState(prevState => Object.assign(prevState, {name}))}
+				value={this.state.name}
+				/>
+
+			<TextInput 
+				onChangeText={freq => this.setState(prevState => Object.assign(prevState, {freq}))}
+				value={this.state.freq}
+				keyboardType={'numeric'}
+				/>
+
+				
+			<Button
+				onPress={this.submit}
+				title="Alright"
+			/>
+
+			<Button
+				onPress={() => this.props.navigation.goBack()}
+				title="Dismiss"
+			/>
 		</View>
 	  );
 	}
@@ -343,7 +383,7 @@ class PostSplash extends React.Component {
 
 	componentDidMount() {
 		var unsubscribeAuthObserver = firebase.auth().onAuthStateChanged(user => {
-			console.log('POST SPLASHES AUTHSTATECHANGE')
+			console.log('firebase authentication state updated')
 			let goTo = user ? 'Home' : 'Login'
 			
 			resetNavigationStack(goTo, this.props.navigation)
@@ -432,6 +472,12 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		backgroundColor: '#ccdae7',
+	},
+
+	textInput: {
+		width: 200,
+		height: 50,
+		margin: 20,
 	},
 
 	global: {

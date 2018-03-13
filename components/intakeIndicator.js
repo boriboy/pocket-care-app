@@ -1,42 +1,69 @@
 import React, { Component } from 'react';
-import { AppRegistry, StyleSheet, TouchableWithoutFeedback, View, Text } from 'react-native';
-import Fetcher from '../app/logic/fetcher'
+import { AppRegistry, StyleSheet, TouchableNativeFeedback, View, Text, Image } from 'react-native';
 
 export default class IntakeIndicator extends Component {
 
-  _indicatorStyle() {
-    // let color = this.state.complete ? maxIntakeCount : minIntakeCount
-    let color = '#a8e4a8'
+	constructor(props) {
+		super(props)
 
-    return {
-      borderRadius:50,
-      backgroundColor: color,
-      width:10,
-      height:10
-    }
-  }
+		let recentlyTaken = IntakeIndicator.isRecentlyTaken(props.medication) 
+		this.state = {recentlyTaken}
+	}
 
-  _tempToggle() {
-    this.setState({complete: !this.state.complete})
-  }
+	componentWillReceiveProps(nextProps) {
+		let recentlyTaken = IntakeIndicator.isRecentlyTaken(nextProps.medication) 
+		console.log('in indicator will receive props ', nextProps.medication.key)
+		this.setState({recentlyTaken})
+	}
 
-  render() {
-    return (
-      <TouchableWithoutFeedback onPress={() => this.props.onTake(this.props.medication)}>
-        <View style={this._indicatorStyle()}><Text></Text></View>
-      </TouchableWithoutFeedback>
-    )
-  }
+	_indicatorStyle() {
+		return {
+			width:50,
+			height:50,
+			justifyContent:'center',
+			alignItems:'center',
+		}
+	}
+
+	_vStyle() {
+		return {
+			width:50,
+			height:50
+		}
+	}
+
+	static isRecentlyTaken = function (med) {
+		if (!med.intakes) {
+			return false
+		}
+
+		var intakesArray = Object.values(med.intakes)
+		var lastIntake = intakesArray[intakesArray.length - 1]
+		var lastIntakeDate = new Date(lastIntake)
+		var now = new Date()
+
+		// set comparison to 6 minutes ago
+		now.setMinutes(now.getMinutes() - 6)
+
+		// console.log(lastIntakeDate >= now)
+		return lastIntakeDate >= now
+	}
+
+	render() {
+		// isDone
+		if (this.state.recentlyTaken || this.props.isDone) {
+			return (<TouchableNativeFeedback onPress={this.props.onTake}>
+				<View style={this._vStyle()}>
+					<Image style={{height:50, width:50}} source={require('../app/img/icons/v.png')} />
+				</View>
+			</TouchableNativeFeedback>
+		)} else {
+			return (
+			<TouchableNativeFeedback onPress={this.props.onTake}>
+				<View style={this._indicatorStyle()}>
+					<Text style={{height: 10, width: 10, borderRadius:50, backgroundColor:'#FF9797'}}></Text>
+				</View>
+			</TouchableNativeFeedback>
+	)}
+	}
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex:1,
-    height: 50,
-    borderRadius :50,
-    backgroundColor: '#000'
-  }
-})
-
-const maxIntakeCount = '#a8e4a8'
-const minIntakeCount = '#b5c7d8'

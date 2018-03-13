@@ -4,26 +4,60 @@ import Fetcher from '../app/logic/fetcher'
 import IntakeIndicator from './intakeIndicator'
 import _ from 'lodash'
 
+// firebase
+import * as firebase from 'firebase'
+
+// models
+import Medication from '../app/models/med'
+
+// logic
+import Normalizer from '../app/logic/normalizer'
+
 export default class MedicationItem extends Component {
     constructor(props) {
-      super(props)
+        super(props)
 
-      this.take = this.take.bind(this)
-      
-      this.state = {
-        data: props.medication,
-      }
+        this.take = this.take.bind(this)
+        this.update = this.update.bind(this)
+        
+        // count taken today
+        let taken = this.takenToday(props.medication)
+        let isDone = this.isDone(props.medication)
+
+        this.state = {
+            data: props.medication,
+            taken,
+            isDone,
+        }
     }
 
-    update(med) {
-        this.setState({data: med})
+    componentDidMount() {
+		// subscribe to changes on intakes
+        let intakeUnsubscriber = firebase.database().ref(`meds/${firebase.auth().currentUser.uid}/${this.props.medication.key}`).on('value', this.update)
+        this.setState(prevState => Object.assign(prevState, {intakeUnsubscriber}))
+    }
+    
+    componentWillUnmount() {
+        console.log('unmounting ', this.props.medication.key)
+        this.state.intakeUnsubscriber()
     }
 
-    take(item) {
+    update(snapshot) {
+        // update med and intakes count
+        let med = Normalizer.adoptKey(snapshot.val(), snapshot.key)
+        let taken = this.takenToday(med)
+        let isDone = this.isDone(med, taken)
+        this.setState(prevState => Object.assign(prevState, {data: med, taken, isDone}))
+    }
+
+    take() {
+        if (this.state.isDone) {
+            // dont allow more intakes
+            return Alert.alert('HOORAY', 'You\'ve taken all your medication for today, way to go!')
+        }
+
         // server call to create intake
-        // Fetcher.put(`med/take/${item._id}/${new Date().getTime()}`)
-            // .then(res => this.update(res.data))
-            // .then(res => this.update(res.data))
+        Medication.take(this.state.data).catch(err => console.log('error taking med ', this.state.data.key))
     }
 
     promptDelete() {
@@ -35,7 +69,7 @@ export default class MedicationItem extends Component {
 		])
     }
 
-    takenToday() {
+    takenToday(med) {
         // init start of day
         let today = new Date()
         today.setHours(0)
@@ -43,12 +77,18 @@ export default class MedicationItem extends Component {
         today.setSeconds(0)
 
         // count intakes occured since start of day
-        let takenToday = _.filter(this.state.data.intakes, intake => {
-            return new Date(intake.created_at) > today.getTime()
+        var takenToday = _.filter(med.intakes, intake => {
+            return new Date(intake) > today.getTime()
         })
 
+        // TODO delete previous day's intakes here
         // return intake count
         return takenToday.length
+    }
+
+    isDone(med, takenToday) {
+        console.log('is done', Number(med.freq) <= takenToday)
+        return Number(med.freq) <= takenToday
     }
 
     getStyle() {
@@ -61,7 +101,7 @@ export default class MedicationItem extends Component {
             alignItems: 'center',
             height: 50,
             paddingLeft: 30,
-            paddingRight: 30,
+            paddingRight: 5,
             backgroundColor: `rgba(255,255,255,${opacity})`
           }
     }
@@ -78,8 +118,9 @@ export default class MedicationItem extends Component {
 
                 {/* count & intake */}
                 <View style={{flex: 1, flexDirection: 'row', justifyContent:'space-around', alignItems: 'center'}}>
-                    <Text>{this.takenToday()}/{med.frequency ? med.frequency : 1}</Text>
-                    <IntakeIndicator medication={med} onTake={this.take} />
+                    <Text>{this.state.taken ? this.state.taken : 0}/{med.freq ? med.freq : 1}</Text>
+                    
+                    <IntakeIndicator medication={med} onTake={this.take} isEven={this.props.isEven} isDone={this.state.isDone}/>
                 </View>
             </TouchableOpacity>
         )
