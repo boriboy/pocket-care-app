@@ -7,17 +7,14 @@ import Config from './app/config'
 import RegisterNotifications from './app/notifications'
 import { StackNavigator, NavigationActions } from 'react-navigation'
 import { Facebook, Google } from './app/social'
-import Normalizer from './app/logic/normalizer'
 
 // firebase
 import * as firebase from 'firebase'
 
 // models
-import Medication from './app/models/med'
+import User from './app/models/user'
+import Medication from './app/models/medication'
 import Notification from './app/models/notification';
-
-// ext libs
-import _ from 'lodash'
 
 class Home extends React.Component {
 
@@ -40,15 +37,16 @@ class Home extends React.Component {
 		backgroundImageIndex: 4,
 		newMedModalActive: false,
 		medsLoaded: false,
-		meds: [],
+		meds: {},
 	}
 
 	constructor(props) {
 		super(props)
 
 		// bind methods
-		this._onMedCreated = this._onMedCreated.bind(this)
 		this.onMedsRetreived = this.onMedsRetreived.bind(this)
+		this.onMedsAltered = this.onMedsAltered.bind(this)
+		this.listenToUserMeds = this.listenToUserMeds.bind(this)
 		this.createMed = this.createMed.bind(this)
 		this.promptLogout = this.promptLogout.bind(this)
 		this.logout = this.logout.bind(this)
@@ -62,15 +60,6 @@ class Home extends React.Component {
 		console.ignoredYellowBox = ['Setting a timer'];
 	}
 
-	setBackgroundImage() {
-		let backgroundImageIndex = getRandomInt(0,7)
-		this.state = Object.assign(this.state, {backgroundImageIndex})
-	}
-
-	getBackground() {
-		return this.backgroundsIndexMap[this.state.backgroundImageIndex]
-	}
-
 	componentDidMount() {
 		// register auth listener
 		let authSubscribtion = firebase.auth().onAuthStateChanged(user => {
@@ -81,30 +70,65 @@ class Home extends React.Component {
 					.catch(err => console.log('error getting token: ', err))
 
 				// call database for medications
-				Medication.get(this.onMedsRetreived)
+				Medication.getOnce(this.onMedsRetreived)
+				// listener below will be triggered after all components tree finish rendering
+				.then(this.listenToUserMeds)
+				
 			}
 		})
+
+		this.setState(prevState => Object.assign(prevState, {authSubscribtion}))
+	}
+
+	listenToUserMeds() {
+		User.medsListener(this.onMedsAltered)
+	}
+
+	onMedsAltered(snapshot) {
+		if (snapshot) {
+			let userMeds = snapshot.val()
+
+			console.log('user meds altered')
+
+			// refetch meds once only if user's meds has altered (added/removed)
+			if (this.didMedsAlter(userMeds)) {
+				console.log('user meds altered ACTUALLY - ***************')
+				Medication.getOnce(this.onMedsRetreived)
+			}
+		}
+	}
+
+	didMedsAlter(userMeds) {
+		let updatedCount;
+		if (!userMeds) updatedCount = 0
+		else updatedCount = Object.keys(userMeds).length
+
+		// meds treated as altered if local state med count doesn't equal to server med count
+		return Object.keys(this.state.meds).length !== updatedCount
+	}
+
+	componentWillUnmount() {
+		this.state.authSubscribtion()
+	}
+
+	setBackgroundImage() {
+		let backgroundImageIndex = getRandomInt(0,7)
+		this.state = Object.assign(this.state, {backgroundImageIndex})
+	}
+
+	getBackground() {
+		return this.backgroundsIndexMap[this.state.backgroundImageIndex]
 	}
 
 	onMedsRetreived(snapshot) {
-		// inject med id into data
-		var mapped = _.map(snapshot.val(), Normalizer.adoptKey)
-
+		console.log('inside onMedsRetreived ########')
 		this.setState(prevState => {
-			return Object.assign(prevState, {meds: Object.values(mapped), medsLoaded: true})
+			return Object.assign(prevState, {meds: snapshot.val(), medsLoaded: true})
 		})
 	}
 
 	__onChangeText(name, value) {
 		this.setState(prevState => Object.assign(prevState, {[name]: value}))
-	}
-
-	_onMedCreated(res) {
-		// ON MED CREATE "https://pocketcare-2d66d.firebaseio.com/meds/-L4GWuunyZx02ms49RzN"
-
-		this.setState(prevState => {
-			return Object.assign(prevState, {meds: res.data})
-		})
 	}
 
 	createMed() {
@@ -171,7 +195,7 @@ class Home extends React.Component {
 				{/* meds list */}
 					<View style={{flex:2, backgroundColor: 'rgba(255,255,255,0.5)'}}>
 					{/* list */}
-						<Medications data={this.state.meds} loaded={this.state.medsLoaded}/>
+						<Medications meds={this.state.meds} loaded={this.state.medsLoaded}/>
 
 					{/* add med button */}
 						<TouchableNativeFeedback onPress={() => {this.props.navigation.navigate('CreateMedicationScreen')}}>
@@ -382,7 +406,7 @@ class PostSplash extends React.Component {
 	}
 
 	componentDidMount() {
-		var unsubscribeAuthObserver = firebase.auth().onAuthStateChanged(user => {
+		var unsubscriber = firebase.auth().onAuthStateChanged(user => {
 			console.log('firebase authentication state updated')
 			let goTo = user ? 'Home' : 'Login'
 			
@@ -393,7 +417,7 @@ class PostSplash extends React.Component {
 		})
 
 		// save unsubscriber
-		this.setState({unsubscriber: unsubscribeAuthObserver})
+		this.setState({unsubscriber})
 	}
 }
 

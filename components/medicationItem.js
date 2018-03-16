@@ -8,7 +8,7 @@ import _ from 'lodash'
 import * as firebase from 'firebase'
 
 // models
-import Medication from '../app/models/med'
+import Medication from '../app/models/medication'
 
 // logic
 import Normalizer from '../app/logic/normalizer'
@@ -32,22 +32,36 @@ export default class MedicationItem extends Component {
     }
 
     componentDidMount() {
-		// subscribe to changes on intakes
-        let intakeUnsubscriber = firebase.database().ref(`meds/${firebase.auth().currentUser.uid}/${this.props.medication.key}`).on('value', this.update)
-        this.setState(prevState => Object.assign(prevState, {intakeUnsubscriber}))
+        // create reference & subscribe to changes on med
+        let medRef = firebase.database().ref(`meds/${firebase.auth().currentUser.uid}/${this.props.medication.key}`)
+        // attach listener
+        medRef.on('value', this.update)
+
+        // add medication database reference to state
+        this.setState(prevState => Object.assign(prevState, {medRef}))
     }
     
     componentWillUnmount() {
         console.log('unmounting ', this.props.medication.key)
-        this.state.intakeUnsubscriber()
+        this.state.medRef.off()
+    }
+
+    shouldComponentUpdate(nextProps, nextState) {
+        // true if should
+        // should only if state changed
+        console.log('should med item update?', nextState.data !== this.state.data)
+        return nextState.data !== this.state.data
     }
 
     update(snapshot) {
-        // update med and intakes count
-        let med = Normalizer.adoptKey(snapshot.val(), snapshot.key)
-        let taken = this.takenToday(med)
-        let isDone = this.isDone(med, taken)
-        this.setState(prevState => Object.assign(prevState, {data: med, taken, isDone}))
+        if (snapshot) {
+            console.log('INSIDE MED UPDATE WITH SNAPSHOT -', snapshot)
+            // update med and intakes count
+            let med = Normalizer.adoptKey(snapshot.val(), snapshot.key)
+            let taken = this.takenToday(med)
+            let isDone = this.isDone(med, taken)
+            this.setState(prevState => Object.assign(prevState, {data: med, taken, isDone}))
+        }
     }
 
     take() {
@@ -64,6 +78,7 @@ export default class MedicationItem extends Component {
         Alert.alert(`Delete ${this.state.data.name}`, `are you sure?`, [
 			{text: 'Nah', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
 			{text: 'Yep', onPress: () => {
+                this.state.medRef.off()
 				this.props.deleteMethod(this.state.data.key)
 			}}
 		])

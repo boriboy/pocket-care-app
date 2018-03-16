@@ -3,8 +3,14 @@ import { AppRegistry, FlatList, Button, Text, View, StyleSheet, TouchableOpacity
 import Fetcher from '../../app/logic/fetcher';
 import MedicationItem from '../../components/medicationItem';
 
+// logic
+import Normalizer from '../../app/logic/normalizer'
+
 // models
-import Medication from '../../app/models/med'
+import Medication from '../../app/models/medication'
+
+// ext libs
+import _ from 'lodash'
 
 export default class Medications extends Component {
 	constructor(props) {
@@ -13,8 +19,12 @@ export default class Medications extends Component {
 		// bind methods
 		this.deleteMedication = this.deleteMedication.bind(this)
 
+		// inject med id into data
+		var mappedMeds = _.map(props.meds, Normalizer.adoptKey)
+
+		console.log('inside medications list constructor - ', mappedMeds)
 		this.state = {
-			data: props.data,
+			meds: mappedMeds,
 			loaded: props.loaded
 		}
 	}
@@ -31,13 +41,18 @@ export default class Medications extends Component {
 		)
 	}
 
+	componentWillReceiveProps(nextProps) {
+		var mappedMeds = _.map(nextProps.meds, Normalizer.adoptKey)
+		this.setState({
+			meds: mappedMeds,
+			loaded: nextProps.loaded
+		})
+	}
+
 	shouldComponentUpdate(nextProps, nextState) {
-		if (this.props.data !== nextProps.data) {
-			this.__syncState(nextProps)
-			return true
-		} else {
-			return this.state.data !== nextState.data
-		}
+		// allow only new props to influence rerendering - med items rerender independantly
+		console.log('should med list update? ', nextProps.meds !== this.props.meds)
+		return nextProps.meds !== this.props.meds
 	}
   
   	deleteMedication(key) {
@@ -57,7 +72,7 @@ export default class Medications extends Component {
 			var isEven = false
 			return (
 				<FlatList
-					data={this.state.data}
+					data={this.state.meds}
 					keyExtractor={item => item.key}
 					renderItem={({item}) => {
 						isEven = !isEven
