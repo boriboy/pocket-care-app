@@ -88,11 +88,8 @@ class Home extends React.Component {
 		if (snapshot) {
 			let userMeds = snapshot.val()
 
-			console.log('user meds altered')
-
 			// refetch meds once only if user's meds has altered (added/removed)
 			if (this.didMedsAlter(userMeds)) {
-				console.log('user meds altered ACTUALLY - ***************')
 				Medication.getOnce(this.onMedsRetreived)
 			}
 		}
@@ -121,7 +118,6 @@ class Home extends React.Component {
 	}
 
 	onMedsRetreived(snapshot) {
-		console.log('inside onMedsRetreived ########')
 		this.setState(prevState => {
 			return Object.assign(prevState, {meds: snapshot.val(), medsLoaded: true})
 		})
@@ -163,7 +159,6 @@ class Home extends React.Component {
 	}
 
 	logout() {
-		console.log('inside logout')
 		firebase.auth().signOut().then(this.onLogout)
 	}
 
@@ -249,7 +244,6 @@ class CreateMedicationScreen extends React.Component {
 						is24Hour: true, // Will display '2 PM'
 						mode: 'spinner'
 					}).then(({action, hour, minute}) => {
-						console.log(action, hour, minute);
 						if (action !== TimePickerAndroid.dismissedAction) {
 							// hour minute are set
 							var date = new Date()
@@ -261,7 +255,6 @@ class CreateMedicationScreen extends React.Component {
 						}
 					})
 
-					// console.log(action, hour, minute);
 				} catch({code, message}) {
 					console.warn('Cannot open time picker', message)
 				}

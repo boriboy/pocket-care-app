@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import { AppRegistry, StyleSheet, TouchableNativeFeedback, View, Text, Image } from 'react-native';
 
+// models
+import Medication from '../app/models/medication'
+
 export default class IntakeIndicator extends Component {
 
 	constructor(props) {
@@ -12,7 +15,6 @@ export default class IntakeIndicator extends Component {
 
 	componentWillReceiveProps(nextProps) {
 		let recentlyTaken = IntakeIndicator.isRecentlyTaken(nextProps.medication) 
-		console.log('in indicator will receive props ', nextProps.medication.key)
 		this.setState({recentlyTaken})
 	}
 
@@ -52,14 +54,14 @@ export default class IntakeIndicator extends Component {
 	render() {
 		// isDone
 		if (this.state.recentlyTaken || this.props.isDone) {
-			return (<TouchableNativeFeedback onPress={this.props.onTake}>
+			return (<TouchableNativeFeedback onPress={this.props.take}>
 				<View style={this._vStyle()}>
 					<Image style={{height:50, width:50}} source={require('../app/img/icons/v.png')} />
 				</View>
 			</TouchableNativeFeedback>
 		)} else {
 			return (
-			<TouchableNativeFeedback onPress={this.props.onTake}>
+			<TouchableNativeFeedback onPress={this.props.take}>
 				<View style={this._indicatorStyle()}>
 					<Text style={{height: 10, width: 10, borderRadius:50, backgroundColor:'#FF9797'}}></Text>
 				</View>

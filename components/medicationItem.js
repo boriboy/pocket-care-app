@@ -22,7 +22,7 @@ export default class MedicationItem extends Component {
         
         // count taken today
         let taken = this.takenToday(props.medication)
-        let isDone = this.isDone(props.medication)
+        let isDone = this.isDone(props.medication, taken)
 
         this.state = {
             data: props.medication,
@@ -49,13 +49,15 @@ export default class MedicationItem extends Component {
     shouldComponentUpdate(nextProps, nextState) {
         // true if should
         // should only if state changed
-        console.log('should med item update?', nextState.data !== this.state.data)
-        return nextState.data !== this.state.data
+        // console.log('this.state.taken', this.state.taken)
+        // console.log('nextState.taken', nextState.taken)
+        // return this.state.taken != nextState.taken
+        return true
     }
 
     update(snapshot) {
+        console.log('updating med ', this.state.data.key)
         if (snapshot) {
-            console.log('INSIDE MED UPDATE WITH SNAPSHOT -', snapshot)
             // update med and intakes count
             let med = Normalizer.adoptKey(snapshot.val(), snapshot.key)
             let taken = this.takenToday(med)
@@ -67,11 +69,21 @@ export default class MedicationItem extends Component {
     take() {
         if (this.state.isDone) {
             // dont allow more intakes
-            return Alert.alert('HOORAY', 'You\'ve taken all your medication for today, way to go!')
+            return this.congratulate()
         }
 
         // server call to create intake
-        Medication.take(this.state.data).catch(err => console.log('error taking med ', this.state.data.key))
+        Medication.take(this.state.data)
+            .then(() => {
+                if (this.state.taken == this.state.data.freq) {
+                    this.congratulate()
+                }
+            })
+            .catch(err => console.log('error taking med ', this.state.data.key))
+    }
+
+    congratulate() {
+        return Alert.alert('HOORAY', `You\'re done with ${this.state.data.name} for today, way to go!`)
     }
 
     promptDelete() {
@@ -102,7 +114,6 @@ export default class MedicationItem extends Component {
     }
 
     isDone(med, takenToday) {
-        console.log('is done', Number(med.freq) <= takenToday)
         return Number(med.freq) <= takenToday
     }
 
@@ -135,7 +146,7 @@ export default class MedicationItem extends Component {
                 <View style={{flex: 1, flexDirection: 'row', justifyContent:'space-around', alignItems: 'center'}}>
                     <Text>{this.state.taken ? this.state.taken : 0}/{med.freq ? med.freq : 1}</Text>
                     
-                    <IntakeIndicator medication={med} onTake={this.take} isEven={this.props.isEven} isDone={this.state.isDone}/>
+                    <IntakeIndicator medication={med} take={this.take} isEven={this.props.isEven} isDone={this.state.isDone}/>
                 </View>
             </TouchableOpacity>
         )

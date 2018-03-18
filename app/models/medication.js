@@ -29,15 +29,13 @@ export default class MedicationModel {
         return firebase.database().ref().update(update)
     }
 
-    static take(medication, callback) {
+    static take(medication) {
         let date = new Date()
-        console.log('MEDICATION KEY IS', medication.key)
         let ref = firebase.database().ref(`meds/${firebase.auth().currentUser.uid}/${medication.key}`)
 
         if (medication.isNew) {
             // create intakes object and get key 
             var intakeKey = ref.child('intakes').push().key
-            console.log('INTAKE KEY IS', intakeKey)
 
             // set isNew = false and add date to intake
             let updates = {}
