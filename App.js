@@ -47,7 +47,6 @@ class Home extends React.Component {
 		this.onMedsRetreived = this.onMedsRetreived.bind(this)
 		this.onMedsAltered = this.onMedsAltered.bind(this)
 		this.listenToUserMeds = this.listenToUserMeds.bind(this)
-		this.createMed = this.createMed.bind(this)
 		this.promptLogout = this.promptLogout.bind(this)
 		this.logout = this.logout.bind(this)
 		this.onLogout = this.onLogout.bind(this)
@@ -101,7 +100,10 @@ class Home extends React.Component {
 		else updatedCount = Object.keys(userMeds).length
 
 		// meds treated as altered if local state med count doesn't equal to server med count
-		return Object.keys(this.state.meds).length !== updatedCount
+		if (this.state.meds)
+			return Object.keys(this.state.meds).length !== updatedCount
+		else
+			return 0 !== updatedCount
 	}
 
 	componentWillUnmount() {
@@ -121,35 +123,6 @@ class Home extends React.Component {
 		this.setState(prevState => {
 			return Object.assign(prevState, {meds: snapshot.val(), medsLoaded: true})
 		})
-	}
-
-	__onChangeText(name, value) {
-		this.setState(prevState => Object.assign(prevState, {[name]: value}))
-	}
-
-	createMed() {
-		Medication.create(this.state.title, this.state.freq, this.state.notes)
-			.catch(err => Alert.alert('Something went wrong :('))
-	}
-			
-	_getModalContent() {
-		return (
-			<View style={styles.modalBackground}>
-				<ScrollView>
-					<View style={styles.modalInnerContainer}>
-						<NavigationBar title={'NEW MEDICATION'} height={0}/>
-						<View style={styles.inputsContainer}>
-							<TextInput style={[styles.input, styles.title]} placeholder={'medication name'} onChangeText={text => this.__onChangeText('title', text)} />
-							<TextInput style={[styles.input, styles.freq]} placeholder={'daily intake frequency'} onChangeText={text => this.__onChangeText('freq', text)} 
-				keyboardType={'numeric'}/>
-							<TextInput style={[styles.input, styles.notes]} placeholder={'notes'} multiline={true} onChangeText={text => this.__onChangeText('notes', text)} />
-						</View>
-
-						<Button title={'do it'} onPress={this.createMed} />
-					</View>
-				</ScrollView>
-			</View>
-		)
 	}
 
 	promptLogout() {
@@ -182,10 +155,10 @@ class Home extends React.Component {
 						{/* avatar */}
 						<TouchableOpacity activeOpacity={0.6} onLongPress={this.promptLogout}>
 							<Image style={{height:100, width:100, borderRadius: 50}}
-								source={{uri: firebase.auth().currentUser.photoURL}}/>
+								source={{uri: firebase.auth().currentUser ? firebase.auth().currentUser.photoURL : ''}}/>
 						</TouchableOpacity>
 						{/* user name */}
-						<Text style={{fontSize: 20}}>{firebase.auth().currentUser.displayName}</Text>
+						<Text style={{fontSize: 20}}>{firebase.auth().currentUser ? firebase.auth().currentUser.displayName : ''}</Text>
 					</View>
 				{/* meds list */}
 					<View style={{flex:2, backgroundColor: 'rgba(255,255,255,0.5)'}}>
@@ -218,14 +191,13 @@ class CreateMedicationScreen extends React.Component {
 
 		this.state = {
 			name: '',
-			freq: '3',
-			notes: '',
-			date: false
+			freq: 3,
+			reminder: false
 		}
 	}
 
 	submit() {
-		Medication.create(this.state.name, this.state.freq, this.state.notes)
+		Medication.create(this.state.name, this.state.freq, this.state.reminder)
 			.then(() => this.props.navigation.goBack())
 			.catch(err => Alert.alert('Something went wrong :('))
 	}
@@ -246,12 +218,12 @@ class CreateMedicationScreen extends React.Component {
 					}).then(({action, hour, minute}) => {
 						if (action !== TimePickerAndroid.dismissedAction) {
 							// hour minute are set
-							var date = new Date()
-							date.setHours(hour)
-							date.setMinutes(minute)
+							var reminder = new Date()
+							reminder.setHours(hour)
+							reminder.setMinutes(minute)
 
-							console.log('the final date is: ', date)
-							this.setState(prevState => Object.assign(prevState, {date}))
+							console.log('the final date is: ', reminder)
+							this.setState({reminder})
 						}
 					})
 
@@ -274,8 +246,9 @@ class CreateMedicationScreen extends React.Component {
 
 			<TextInput 
 				onChangeText={freq => this.setState(prevState => Object.assign(prevState, {freq}))}
-				value={this.state.freq}
+				value={String(this.state.freq)}
 				keyboardType={'numeric'}
+				maxLength={20}
 				/>
 
 				
@@ -301,20 +274,30 @@ class Login extends React.Component {
 	constructor(props) {
 		super(props)
 
-		this.onLogin = this.onLogin.bind(this)
+		// this.onLogin = this.onLogin.bind(this)
 	}
 
-	onLogin() {
-		resetNavigationStack('Home', this.props.navigation)
+	componentDidMount() {
+		let authUnsubscriber = firebase.auth().onAuthStateChanged(user => {
+			if (user) {
+				resetNavigationStack('Home', this.props.navigation)
+			}
+		})
+		
+		this.setState({authUnsubscriber})
+	}
+
+	componentWillUnmount() {
+		this.state.authUnsubscriber()
 	}
 
 	googleLogin() {
-		Google.login().then(this.onLogin)
+		Google.login()
 	}
 	
 	
 	facebookLogin() {
-		Facebook.login().then(this.onLogin)
+		Facebook.login()
 	}
 
 

@@ -33,10 +33,18 @@ export default class Medications extends Component {
 		this.setState(data)
 	}
 
-	_renderLoader() {
+	loader() {
 		return (
 		<View style={styles.loaderContainer}>
 			<Text>{'fetching meds'}</Text>
+		</View>
+		)
+	}
+	
+	emptyList() {
+		return (
+		<View style={styles.loaderContainer}>
+			<Text>{'No medications yet'}</Text>
 		</View>
 		)
 	}
@@ -67,7 +75,9 @@ export default class Medications extends Component {
 	render() {
 		// loader while async request processing
 		if (!this.state.loaded) {
-			return (this._renderLoader())
+			return (this.loader())
+		} else if (this.state.meds.length === 0) {
+			return (this.emptyList())
 		} else {
 			var isEven = false
 			return (
