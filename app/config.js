@@ -1,5 +1,39 @@
 import * as firebase from 'firebase'
 import { initializeApp } from 'firebase'
+import {Constants as ExpoConstants} from 'expo'
+
+/**
+ * determine which environment app runs
+ * 
+ * @param {*} releaseChannel 
+ * @returns {string} 
+ */
+const determineEnv = function (releaseChannel) {
+    let env
+
+    switch(releaseChannel) {
+        case undefined:
+            env = 'development'
+            break;
+
+        case 'staging':
+            env = 'staging'
+            break;
+
+        default:
+        case 'production':
+            env = 'production'
+            break;
+    }
+
+    console.log('environment set to:', env)
+    return env
+}
+
+// set env
+let env = determineEnv(ExpoConstants.manifest.releaseChannel)
+// set database prefix
+let DatabasePrefix = `${env}`
 
 const facebookAppId = '1824628664238434'
 const googleSocial = {
@@ -22,7 +56,10 @@ const firebaseConfig = {
 // init firebase
 firebase.initializeApp(firebaseConfig)
 
+console.log('DatabasePrefixDatabasePrefix', DatabasePrefix)
+
 export default {
     facebookAppId,
-    googleSocial
+    googleSocial,
+    DatabasePrefix
 }

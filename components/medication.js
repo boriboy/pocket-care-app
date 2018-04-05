@@ -3,6 +3,7 @@ import { AppRegistry, FlatList, Text, View, StyleSheet, TouchableOpacity, Alert 
 import Fetcher from '../app/logic/fetcher'
 import IntakeIndicator from './intakeIndicator'
 import _ from 'lodash'
+import Config from '../app/config'
 
 // firebase
 import * as firebase from 'firebase'
@@ -33,7 +34,7 @@ export default class MedicationItem extends Component {
 
     componentDidMount() {
         // create reference & subscribe to changes on med
-        let medRef = firebase.database().ref(`meds/${firebase.auth().currentUser.uid}/${this.props.medication.key}`)
+        let medRef = firebase.database().ref(`${Config.DatabasePrefix}/meds/${firebase.auth().currentUser.uid}/${this.props.medication.key}`)
         // attach listener
         medRef.on('value', this.update)
 
