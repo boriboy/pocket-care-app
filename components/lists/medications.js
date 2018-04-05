@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { AppRegistry, FlatList, Button, Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Fetcher from '../../app/logic/fetcher';
-import MedicationItem from '../../components/medicationItem';
+import MedicationItem from '../../components/medication';
 
 // logic
 import Normalizer from '../../app/logic/normalizer'

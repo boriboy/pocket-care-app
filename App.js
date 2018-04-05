@@ -1,12 +1,16 @@
 import React from 'react'
-import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView, Image, TouchableOpacity, TouchableNativeFeedback, TimePickerAndroid } from 'react-native'
-import NavigationBar from './components/nav'
+import { StyleSheet, Modal, Alert, TextInput, Button, Text, View, ScrollView, Image, TouchableOpacity, TouchableNativeFeedback, TimePickerAndroid, CheckBox } from 'react-native'
 import Medications from './components/lists/medications'
+import Reminder from './components/reminder'
 import Fetcher from './app/logic/fetcher'
 import Config from './app/config'
 import RegisterNotifications from './app/notifications'
 import { StackNavigator, NavigationActions } from 'react-navigation'
 import { Facebook, Google } from './app/social'
+
+
+// expo
+import Expo from 'expo'
 
 // firebase
 import * as firebase from 'firebase'
@@ -60,6 +64,7 @@ class Home extends React.Component {
 	}
 
 	componentDidMount() {
+		// console.log('expo manifest', Expo.Constants.manifest.releaseChannel)
 		// register auth listener
 		let authSubscribtion = firebase.auth().onAuthStateChanged(user => {
 			if (user) {
@@ -221,10 +226,11 @@ class CreateMedicationScreen extends React.Component {
 							var reminder = new Date()
 							reminder.setHours(hour)
 							reminder.setMinutes(minute)
-
-							console.log('the final date is: ', reminder)
-							this.setState({reminder})
+							return reminder
 						}
+					}).then(reminder => {
+						console.log('the final date is: ', reminder)
+						this.setState({reminder})
 					})
 
 				} catch({code, message}) {
@@ -261,6 +267,128 @@ class CreateMedicationScreen extends React.Component {
 				onPress={() => this.props.navigation.goBack()}
 				title="Dismiss"
 			/>
+		</View>
+	  );
+	}
+}
+
+class RemindersView extends React.Component {
+	render() {
+		if (!this.props.remind) {
+			return null
+		} else {
+			let reminderComponents = []
+			for(var i = 0; i < this.props.freq; i++) {
+				reminderComponents.push(<Reminder index={i} addReminder={this.props.addReminder} key={i}/>) 
+			}
+
+			return (reminderComponents)
+		}
+	}
+}
+
+class CreateMedicationScreen2 extends React.Component {
+	constructor(props) {
+		super(props)
+
+		this.submit = this.submit.bind(this)
+
+		this.state = {
+			med: {
+				name: '',
+				freq: 3,
+			},
+			remind: false,
+			reminders: {}
+		}
+	}
+
+	submit() {
+		if (!this.state.med.name) {
+			return Alert.alert('Invalid input', 'You gotta name it :)')
+		}
+
+		if (!this.state.med.freq) {
+			return Alert.alert('Invalid input', 'Tell me your intake frequency :)')
+		}
+
+		Medication.create(this.state.med.name, this.state.med.freq, this.state.reminder, this.state.reminders)
+			.then(() => this.props.navigation.goBack())
+			.catch(err => Alert.alert('Something went wrong :('))
+	}
+
+	render() {
+	  return (
+		<View style={{flex:1}}>
+			{/* background image */}
+			<View
+				style={{
+					position: 'absolute',
+					width: '100%',
+					height: '100%',
+				}}
+				>
+				<Image
+					style={{
+					flex: 1,
+					resizeMode:'cover',
+					opacity: 0.60,
+					}}
+					blurRadius={10}
+					source={require('./app/img/backgrounds/0.jpg')}
+				/>
+			</View>
+
+			<View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: '15%', marginBottom: '15%', marginHorizontal:'5%'}}>
+
+				{/* medication section */}
+				<View style={{flex:4, width:'100%'}}>
+					<TextInput style={{flex:1, textAlign: 'center', padding:'5%'}} autoCapitalize={'words'} value={this.state.med.name} placeholder={'name'}
+						onChangeText={name => {
+							this.setState(prev => {
+								prev.med.name = name
+								return prev
+							})
+						}} />
+
+					<TextInput style={{flex:1, textAlign: 'center', padding:'5%'}} value={String(this.state.med.freq)} placeholder={'frequency'} keyboardType={'numeric'}
+						onChangeText={freq => {
+							this.setState(prev => {
+								prev.med.freq = Number(freq)
+								return prev
+							})
+						}} />	
+				</View>
+
+				{/* remind checkbox */}
+				<View style={{flex:2, width: '100%', flexDirection: 'row', justifyContent: 'flex-start', alignItems:'center'}}>
+					<CheckBox style={{flex:1}} value={this.state.remind} onValueChange={() => this.setState({remind: !this.state.remind})} />
+					<Text style={{flex:7}}>Remind me</Text>
+				</View>
+
+				{/* reminders section */}
+				<View style={{flex: 6, padding:'3%'}}>
+					<ScrollView>
+						<RemindersView remind={this.state.remind} freq={this.state.med.freq} addReminder={(index, date) => {
+							this.setState(prev => {
+								prev.reminders[index] = date
+								prev
+							})
+							console.log('state after reminder update', this.state)
+						}} />
+					</ScrollView>
+				</View>
+
+				{/* buttons */}
+				<View style={{flex:1, flexDirection:'row', justifyContent: 'space-between'}}>
+					<View style={{flex:1}}>
+						<Button style={{}} onPress={() => this.props.navigation.goBack()} title="Cancel"/>
+					</View>
+					<View style={{flex:1}}>
+						<Button style={{}} onPress={this.submit} title="Done" />
+					</View>
+				</View>
+			</View>
 		</View>
 	  );
 	}
@@ -448,7 +576,7 @@ const RootStack = StackNavigator(
 		screen: MainStack,
 	  },
 	  CreateMedicationScreen: {
-		screen: CreateMedicationScreen,
+		screen: CreateMedicationScreen2,
 	  },
 	},
 	{

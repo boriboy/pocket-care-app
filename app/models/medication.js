@@ -1,7 +1,7 @@
 import * as firebase from 'firebase'
 
 export default class MedicationModel {
-    static create(name = '', freq = 1, reminder = false) {
+    static create(name = '', freq = 1, remind = false, reminders = {}) {
         let isNew = true
         let uid = firebase.auth().currentUser.uid
 
@@ -11,7 +11,7 @@ export default class MedicationModel {
         // create med, add med key under users
         let updates = {}
         updates[`/users/${uid}/meds/${medKey}`] = true
-        updates[`/meds/${uid}/${medKey}`] = {name, freq, isNew, reminder}
+        updates[`/meds/${uid}/${medKey}`] = {name, freq, isNew, remind, reminders}
 
         // update
         return firebase.database().ref().update(updates)
